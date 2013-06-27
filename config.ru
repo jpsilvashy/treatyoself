@@ -1,2 +1,2 @@
-require './info'
+require './app'
 run Sinatra::Application
