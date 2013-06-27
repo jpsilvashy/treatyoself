@@ -4,6 +4,7 @@ GEM
     rack (1.5.2)
     rack-protection (1.5.0)
       rack
+    redis (3.0.4)
     sinatra (1.4.2)
       rack (~> 1.5, >= 1.5.2)
       rack-protection (~> 1.4)
@@ -14,4 +15,5 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  redis
   sinatra
