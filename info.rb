@@ -13,11 +13,7 @@ images = [
   'http://25.media.tumblr.com/tumblr_lt2w75rKZO1qazkdco1_500.gif'
 ]
 
-get '/image.json' do
+get '/random' do
   content_type :json
   images.sample.to_json
-end
-
-get '/' do
-  send_file images.sample
 end
