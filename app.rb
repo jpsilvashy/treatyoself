@@ -22,10 +22,10 @@ get '/' do
   redirect @randomkey || '/'
 end
 
-get '/:shortcode' do
-  @url = settings.redis.get params[:shortcode]
-  redirect @url || '/'
-end
+# get '/:shortcode' do
+#   @url = settings.redis.get params[:shortcode]
+#   redirect @url || '/'
+# end
 
 images = [
   'http://blog.zap2it.com/frominsidethebox/parks-and-rec-treat-yoursel.jpg',
