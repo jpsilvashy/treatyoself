@@ -1,45 +1,42 @@
+#!/usr/bin/env ruby -I ../lib -I lib
+# coding: utf-8
+
+require 'bundler/setup'
+Bundler.require
+
 require 'sinatra'
-require 'redis'
-require 'json'
+require 'sinatra/json'
+require 'sinatra/reloader'
+require 'sinatra/cross_origin'
+require "sinatra/jsonp"
 
-redis = Redis.new
+# Build and parse Redis uri
+redis_uri = URI.parse(ENV["REDISTOGO_URL"] || "redis://localhost:6379")
 
-configure do
-  redis_url = ENV["REDISTOGO_URL"] || "redis://localhost:6379"
-  uri = URI.parse(redis_url)
-  set :redis, Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
-end
+# Make connection to Redis
+set :redis, Redis.new(
+  host: redis_uri.host,
+  port: redis_uri.port,
+  password: redis_uri.password
+)
 
-post '/' do
-  if params[:url] and not params[:url].empty?
-    @shortcode = SecureRandom.hex(4)
-    settings.redis.setnx @shortcode, params[:url]
-  end
-end
+# Set server and connection pool
+set server: 'thin', connections: []
 
-get '/' do
-  @randomkey = settings.redis.get settings.redis.randomkey
-  redirect @randomkey || '/'
-end
+# Headers
+set :allow_origin, :any
+set :allow_methods, [:get, :post, :options]
+set :allow_credentials, true
+set :max_age, "1728000"
 
-get '/:shortcode' do
-  @url = settings.redis.get params[:shortcode]
-  redirect @url || '/'
-end
+# Allow CORS
+set :protection, except: :http_origin
 
-images = [
-  'http://blog.zap2it.com/frominsidethebox/parks-and-rec-treat-yoursel.jpg',
-  'http://i52.tinypic.com/afihkh.jpg',
-  'http://24.media.tumblr.com/tumblr_m8mtpz78vu1rs7wu4o1_r2_500.jpg',
-  'http://michiganjournal.org/wp-content/uploads/2012/11/parks-and-rec-treat-yo-self.gif',
-  'http://sherryndaniel.files.wordpress.com/2012/02/treat-to-self-2.jpg',
-  'http://media.tumblr.com/tumblr_m8u0ziwt5i1rqpx0x.gif',
-  'http://www.newdressaday.com/wp-content/uploads/2011/11/photo7.jpg',
-  'http://25.media.tumblr.com/tumblr_lt2w75rKZO1qazkdco1_500.gif'
-]
+# Models
+require_relative 'app/models/resource'
 
-get '/random' do
-  content_type :json
-  images.sample.to_json
-end
+# Controllers
+require_relative 'app/controllers/base_controller'
+require_relative 'app/controllers/resource_controller'
+
 
