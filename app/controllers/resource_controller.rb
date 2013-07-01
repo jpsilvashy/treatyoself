@@ -1,20 +1,22 @@
 # POST /
 post '/' do
   if params[:url] and not params[:url].empty?
-    settings.redis.sadd 'uris', params[:url]
+    @shortcode = SecureRandom.hex(4)
+    settings.redis.set @shortcode, params[:url]
   end
 end
 
 # DELETE /:shortcode
 delete '/:shortcode' do
   if params[:shortcode] and not params[:shortcode].empty?
-    settings.redis.srem params[:shortcode]
+    settings.redis.del params[:shortcode]
   end
 end
 
 # GET on index
 get '/' do
-  redirect settings.redis.spop('uris') || '/'
+  @shortcode = settings.redis.get settings.redis.randomkey
+  redirect @shortcode || '/'
 end
 
 # GET for shortcodes
