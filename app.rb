@@ -1,29 +1,42 @@
+#!/usr/bin/env ruby -I ../lib -I lib
+# coding: utf-8
+
+require 'bundler/setup'
+Bundler.require
+
 require 'sinatra'
-require 'redis'
-require 'json'
+require 'sinatra/json'
+require 'sinatra/reloader'
+require 'sinatra/cross_origin'
+require "sinatra/jsonp"
 
-redis = Redis.new
+# Build and parse Redis uri
+redis_uri = URI.parse(ENV["REDISTOGO_URL"] || "redis://localhost:6379")
 
-configure do
-  redis_url = ENV["REDISTOGO_URL"] || "redis://localhost:6379"
-  uri = URI.parse(redis_url)
-  set :redis, Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
-end
+# Make connection to Redis
+set :redis, Redis.new(
+  host: redis_uri.host,
+  port: redis_uri.port,
+  password: redis_uri.password
+)
 
-post '/' do
-  if params[:url] and not params[:url].empty?
-    @shortcode = SecureRandom.hex(4)
-    settings.redis.setnx @shortcode, params[:url]
-  end
-end
+# Set server and connection pool
+set server: 'thin', connections: []
 
-get '/' do
-  @randomkey = settings.redis.get settings.redis.randomkey
-  redirect @randomkey || '/'
-end
+# Headers
+set :allow_origin, :any
+set :allow_methods, [:get, :post, :options]
+set :allow_credentials, true
+set :max_age, "1728000"
 
-get '/:shortcode' do
-  @url = settings.redis.get params[:shortcode]
-  redirect @url || '/'
-end
+# Allow CORS
+set :protection, except: :http_origin
+
+# Models
+require_relative 'app/models/resource'
+
+# Controllers
+require_relative 'app/controllers/base_controller'
+require_relative 'app/controllers/resource_controller'
+
 
